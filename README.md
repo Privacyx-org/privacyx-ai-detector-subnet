@@ -28,3 +28,9 @@ curl -s 'http://localhost:8080/v1/qos/eligibility?address=0xABC...' \
   -H 'x-api-key: dev_key_123' | jq .
 
 ```
+
+## Modèle
+Le fichier du modèle ONNX n'est pas versionné (taille > 100 MB). Placez votre modèle localement :
+- Copiez votre modèle vers `services/miner/models/detector.onnx`
+- Ou ajustez `MODEL_PATH` via une variable d'env/volume Docker.
+
