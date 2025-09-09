@@ -1,0 +1,81 @@
+services:
+  gateway:
+    build: ./services/gateway
+    container_name: px-gateway
+    restart: unless-stopped
+    ports: ["8080:8080"]
+    environment:
+      - API_KEYS=${API_KEYS}
+      - SCHEDULER_URL=http://scheduler:9090
+      - MAX_IMAGE_MB=2
+      - MAX_VIDEO_MB=12
+      - TIMEOUT_IMAGE_MS=10000
+      - TIMEOUT_VIDEO_MS=15000
+      - PRVX_RPC_URL=${PRVX_RPC_URL}
+      - PRVX_TOKEN_ADDRESS=${PRVX_TOKEN_ADDRESS}
+      - PRVX_QOS_THRESHOLD_WEI=${PRVX_QOS_THRESHOLD_WEI}
+      - ENABLE_SIGNATURE_QOS=${ENABLE_SIGNATURE_QOS}
+    depends_on: [scheduler]
+    networks: [pxnet]
+
+  scheduler:
+    build: ./services/scheduler
+    container_name: px-scheduler
+    restart: unless-stopped
+    ports: ["9090:9090"]
+    environment:
+      - COMMITTEE_SIZE_IMAGE=3
+      - COMMITTEE_SIZE_VIDEO=3
+      - OUTLIER_Z=2.0
+      - TRIM_RATIO=0.2
+      - VALIDATOR_URL=http://validator:7070
+      - MINERS=http://miner1:6060,http://miner2:6060,http://miner3:6060
+    depends_on: [validator, miner1, miner2, miner3]
+    networks: [pxnet]
+
+  validator:
+    build: ./services/validator
+    container_name: px-validator
+    restart: unless-stopped
+    ports: ["7070:7070"]
+    networks: [pxnet]
+
+  miner1:
+    build: ./services/miner
+    restart: unless-stopped
+    environment:
+      - NODE_ID=miner1_cpu_local
+      - MODEL_ID=px-detector-v1
+      - MODEL_PATH=/app/models/detector.onnx
+      - IMG_SIZE=224
+    expose:
+      - "6060"
+    networks: [pxnet]
+
+  miner2:
+    build: ./services/miner
+    restart: unless-stopped
+    environment:
+      - NODE_ID=miner2_cpu_local
+      - MODEL_ID=px-detector-v1
+      - MODEL_PATH=/app/models/detector.onnx
+      - IMG_SIZE=224
+    expose:
+      - "6060"
+    networks: [pxnet]
+
+  miner3:
+    build: ./services/miner
+    restart: unless-stopped
+    environment:
+      - NODE_ID=miner3_cpu_local
+      - MODEL_ID=px-detector-v1
+      - MODEL_PATH=/app/models/detector.onnx
+      - IMG_SIZE=224
+    expose:
+      - "6060"
+    networks: [pxnet]
+
+networks:
+  pxnet:
+    driver: bridge
