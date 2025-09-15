@@ -5,9 +5,9 @@ Bittensor subnet for image/video detection (local PoC with gateway/scheduler/min
 ## Services
 
 - **gateway** : API FastAPI (port 8080)
-- **scheduler** : sélectionne un comité de miners (port 9090)
-- **validator** : agrège/valide (port 7070)
-- **miners** : inference (port 6060 interne)
+- **scheduler** : selects a committee of miners (port 9090)
+- **validator** : aggregate/validate (port 7070)
+- **miners** : inference (internal port 6060)
 
 ## Quick start
 
