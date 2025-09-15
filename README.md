@@ -1,6 +1,6 @@
 # PrivacyX AI Detector Subnet
 
-Subnet Bittensor pour la détection d'images/vidéos (PoC local avec gateway/scheduler/miners/validator).
+Bittensor subnet for image/video detection (local PoC with gateway/scheduler/miners/validator).
 
 ## Services
 
@@ -9,7 +9,7 @@ Subnet Bittensor pour la détection d'images/vidéos (PoC local avec gateway/sch
 - **validator** : agrège/valide (port 7070)
 - **miners** : inference (port 6060 interne)
 
-## Démarrage rapide
+## Quick start
 
 ```bash
 docker compose up -d --build
@@ -29,8 +29,8 @@ curl -s 'http://localhost:8080/v1/qos/eligibility?address=0xABC...' \
 
 ```
 
-## Modèle
-Le fichier du modèle ONNX n'est pas versionné (taille > 100 MB). Placez votre modèle localement :
-- Copiez votre modèle vers `services/miner/models/detector.onnx`
-- Ou ajustez `MODEL_PATH` via une variable d'env/volume Docker.
+## Model
+The ONNX model file is not versioned (size > 100 MB). Place your model locally:
+- Copy your template to `services/miner/models/detector.onnx`
+- Or adjust `MODEL_PATH` via an env/volume Docker variable.
 
