@@ -1,22 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-API=http://localhost:8080
-KEY=dev_key_123
-VIP=0xfbe27f21157a60184fe223d2c8e54ea2032a8189
+echo "# Scheduler health"
+curl -s http://127.0.0.1:7080/health | jq .
 
-echo "# Health"
-curl -s "$API/v1/health" | jq . || true
+echo "# Gateway health"
+curl -s -H 'x-api-key: dev' http://127.0.0.1:7070/v1/health | jq .
 
-echo -e "\n# Non-VIP detect/image"
-curl -sS -X POST "$API/v1/detect/image" \
-  -H "x-api-key: $KEY" -H 'Content-Type: application/json' \
-  -d '{"source_url":"https://picsum.photos/seed/smoke-nonvip/512.jpg"}' | jq .
+echo "# Image URL"
+curl -sS -X POST http://127.0.0.1:7070/v1/detect/image \
+  -H 'x-api-key: dev' -H 'Content-Type: application/json' \
+  -d '{"source_url":"https://upload.wikimedia.org/wikipedia/commons/3/3a/Cat03.jpg"}' | jq .
 
-echo -e "\n# VIP detect/image"
-curl -sS -X POST "$API/v1/detect/image" \
-  -H "x-api-key: $KEY" -H "x-prvx-address: $VIP" -H 'Content-Type: application/json' \
-  -d '{"source_url":"https://picsum.photos/seed/smoke-vip/512.jpg"}' | jq .
+echo "# Video URL"
+curl -sS -X POST http://127.0.0.1:7070/v1/detect/video \
+  -H 'x-api-key: dev' -H 'Content-Type: application/json' \
+  -d '{"video_url":"https://sample-videos.com/video321/mp4/720/big_buck_bunny_720p_1mb.mp4"}' | jq .
 
-echo -e "\n# QoS eligibility"
-curl -sS "$API/v1/qos/eligibility?address=$VIP" -H "x-api-key: $KEY" | jq .
+echo "# Round-robin (4 requests)"
+for i in {1..4}; do
+  curl -sS -X POST http://127.0.0.1:7070/v1/detect/image \
+    -H 'x-api-key: dev' -H 'Content-Type: application/json' \
+    -d '{"source_url":"https://upload.wikimedia.org/wikipedia/commons/3/3a/Cat03.jpg"}' \
+  | jq -r '.miner_url'
+done
