@@ -32,3 +32,9 @@ build/
 
 # Models (large)
 services/miner/models/*.onnx
+
+# --- env files ---
+.env
+.env.local
+.env.*.local
+!.env.example
