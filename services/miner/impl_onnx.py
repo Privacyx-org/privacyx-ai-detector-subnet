@@ -9,7 +9,6 @@ from PIL import Image
 
 import onnxruntime as ort
 
-
 IMAGENET_LABELS_PATH = os.getenv(
     "IMAGENET_LABELS_PATH",
     "/app/services/miner/models/imagenet_classes.txt",
@@ -22,7 +21,7 @@ MODEL_PATH = os.getenv(
 
 # Prétraitement ImageNet standard (224x224, RGB, NCHW, normalisation)
 _MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
-_STD  = np.array([0.229, 0.224, 0.225], dtype=np.float32)
+_STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
 
 
 def _load_labels(path: str) -> List[str]:
@@ -77,12 +76,28 @@ class OnnxDetector:
         if not os.path.exists(MODEL_PATH):
             raise FileNotFoundError(f"MODEL_PATH not found: {MODEL_PATH}")
         self.labels = _load_labels(IMAGENET_LABELS_PATH)
+
         # Session ONNX
         sess_opts = ort.SessionOptions()
-        # (optionnel) optimisation niveau 1-3
+        # Optimisation niveau 3
         sess_opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
-        providers = ort.get_available_providers()
-        self.session = ort.InferenceSession(MODEL_PATH, sess_options=sess_opts, providers=providers)
+
+        # Threads via env (fallback 1)
+        try:
+            n_threads = int(os.getenv("ORT_NUM_THREADS", "1"))
+        except ValueError:
+            n_threads = 1
+        sess_opts.intra_op_num_threads = max(1, n_threads)
+        sess_opts.inter_op_num_threads = 1
+
+        # Providers : CPU par défaut (explicite)
+        providers = ["CPUExecutionProvider"]
+
+        self.session = ort.InferenceSession(
+            MODEL_PATH,
+            sess_options=sess_opts,
+            providers=providers,
+        )
 
         # Entrée/sortie
         self.input_name = self.session.get_inputs()[0].name
