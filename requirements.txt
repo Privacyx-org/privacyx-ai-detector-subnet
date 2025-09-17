@@ -6,3 +6,5 @@ numpy
 Pillow
 
 httpx
+
+web3
