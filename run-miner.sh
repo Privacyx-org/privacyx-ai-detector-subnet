@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-source .venv/bin/activate
 
-# Exporter les variables de .env (si présent)
-set -a
-[ -f .env ] && source .env
-set +a
-
-PORT="${1:-6061}"
-uvicorn services.miner.app.main:app --host 127.0.0.1 --port "$PORT"
+PORT="${PORT:-6061}"
+# Lance l'app FastAPI définie dans services/miner/app/api.py
+exec uvicorn services.miner.app.api:app --host 0.0.0.0 --port "${PORT}"

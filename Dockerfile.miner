@@ -1,0 +1,24 @@
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    MODEL_IMPL=stub
+
+RUN adduser --disabled-password --gecos "" appuser && \
+    apt-get update && apt-get install -y --no-install-recommends build-essential curl && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY requirements.txt /app/requirements.txt
+# onnxruntime est optionnel; si tu veux onnx, tu peux l’ajouter via build-arg ou image dédiée
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+COPY services/miner /app/services/miner
+COPY run-miner.sh /app/run-miner.sh
+RUN chmod +x /app/run-miner.sh
+
+ENV HOST=0.0.0.0 PORT=6061
+EXPOSE 6061
+
+USER appuser
+CMD ["/app/run-miner.sh"]
