@@ -38,3 +38,17 @@ services/miner/models/*.onnx
 .env.local
 .env.*.local
 !.env.example
+# Environnements & caches
+.venv/
+__pycache__/
+*.pyc
+
+# Secrets & configs locaux
+.env
+
+# Fichiers temporaires/backup
+*.bak
+.DS_Store
+
+# Binaires / poids modèles
+services/miner/models/*.onnx

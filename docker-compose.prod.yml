@@ -1,0 +1,84 @@
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    image: privacyx/gateway:prod
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Fallbacks si .env manquant
+      - API_KEYS=${API_KEYS:-dev}
+      - SCHEDULER_URL=http://scheduler:7080
+      - DISABLE_QOS=${DISABLE_QOS:-1}
+    ports:
+      - "7070:7070"
+    depends_on:
+      scheduler:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD","curl","-fsS","http://localhost:7070/v1/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.scheduler
+    image: privacyx/scheduler:prod
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - SCHEDULER_PORT=7080
+      - MINER_URLS=http://miner1:6061,http://miner2:6062
+    expose:
+      - "7080"
+    healthcheck:
+      test: ["CMD","curl","-fsS","http://localhost:7080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  miner1:
+    build:
+      context: .
+      dockerfile: Dockerfile.miner
+    image: privacyx/miner:prod
+    restart: unless-stopped
+    environment:
+      - PORT=6061
+      - MODEL_IMPL=onnx
+      - MODEL_PATH=/app/services/miner/models/detector.onnx
+    volumes:
+      - ./services/miner/models:/app/services/miner/models:ro
+    expose:
+      - "6061"
+    healthcheck:
+      test: ["CMD","curl","-fsS","http://localhost:6061/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  miner2:
+    build:
+      context: .
+      dockerfile: Dockerfile.miner
+    image: privacyx/miner:prod
+    restart: unless-stopped
+    environment:
+      - PORT=6062
+      - MODEL_IMPL=onnx
+      - MODEL_PATH=/app/services/miner/models/detector.onnx
+    volumes:
+      - ./services/miner/models:/app/services/miner/models:ro
+    expose:
+      - "6062"
+    healthcheck:
+      test: ["CMD","curl","-fsS","http://localhost:6062/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+

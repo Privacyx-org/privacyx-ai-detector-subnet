@@ -1,0 +1,13 @@
+.venv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.sqlite3
+.env
+.env.*
+.git
+.gitignore
+.DS_Store
+services/miner/models/*.onnx

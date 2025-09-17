@@ -1,0 +1,25 @@
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Sécurité minimale + perf
+RUN adduser --disabled-password --gecos "" appuser && \
+    apt-get update && apt-get install -y --no-install-recommends build-essential curl && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# Copier uniquement le code utile
+COPY services/gateway /app/services/gateway
+COPY services/scheduler /app/services/scheduler
+COPY services/miner /app/services/miner
+COPY run-gateway.sh /app/run-gateway.sh
+
+ENV HOST=0.0.0.0 PORT=7070
+EXPOSE 7070
+
+USER appuser
+CMD ["bash","-lc","PYTHONUNBUFFERED=1 uvicorn services.gateway.app.api:app --host 0.0.0.0 --port ${PORT}"]

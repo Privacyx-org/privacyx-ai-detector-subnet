@@ -10,3 +10,5 @@ httpx
 web3
 
 onnxruntime
+
+onnxruntime==1.18.1
