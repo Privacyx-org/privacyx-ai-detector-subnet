@@ -1,17 +1,19 @@
 import os, time, base64
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import FastAPI, APIRouter, HTTPException, Header
 from pydantic import BaseModel, HttpUrl
 import httpx
 from .deps import require_api_key
 from .qos import is_eligible
 
 router = APIRouter()
-SCHEDULER_URL = os.getenv("SCHEDULER_URL", "http://scheduler:9090")
+# ✅ corrige le port par défaut du scheduler
+SCHEDULER_URL = os.getenv("SCHEDULER_URL", "http://scheduler:7080")
 
-# (optionnel) timeouts côté gateway -> scheduler
+# timeouts côté gateway -> scheduler
 TIMEOUT_IMAGE_CLIENT_S = float(os.getenv("TIMEOUT_IMAGE_MS", "20000")) / 1000.0
 TIMEOUT_VIDEO_CLIENT_S = float(os.getenv("TIMEOUT_VIDEO_MS", "30000")) / 1000.0
+
 
 class ImageReq(BaseModel):
     image_b64: Optional[str] = None
@@ -19,11 +21,13 @@ class ImageReq(BaseModel):
     return_explanation: bool = False
     client_ref: Optional[str] = None
 
+
 class VideoReq(BaseModel):
     video_url: HttpUrl
     max_duration_sec: int = 6
     sampling: str = "keyframes"
     client_ref: Optional[str] = None
+
 
 @router.get("/health")
 async def health():
@@ -32,6 +36,7 @@ async def health():
         r.raise_for_status()
         sched = r.json()
     return {"gateway_status": "ok", **sched}
+
 
 @router.get("/qos/eligibility")
 async def qos_eligibility(address: str, threshold_wei: int | None = None, x_api_key: str = Header(None)):
@@ -47,6 +52,7 @@ async def qos_eligibility(address: str, threshold_wei: int | None = None, x_api_
     except Exception as e:
         raise HTTPException(500, f"qos check error: {e}")
 
+
 async def _fetch_as_data_url(url: str) -> str:
     # Suivre les redirections (picsum, etc.)
     async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as cx:
@@ -55,6 +61,7 @@ async def _fetch_as_data_url(url: str) -> str:
         ct = r.headers.get("content-type", "image/jpeg")
         b64 = base64.b64encode(r.content).decode()
         return f"data:{ct};base64,{b64}"
+
 
 @router.post("/detect/image")
 async def detect_image(
@@ -93,6 +100,7 @@ async def detect_image(
         result["prvx_address"] = x_prvx_address
     return result
 
+
 @router.post("/detect/video")
 async def detect_video(
     body: VideoReq,
@@ -101,7 +109,6 @@ async def detect_video(
 ):
     require_api_key(x_api_key)
 
-    # model_dump() peut laisser video_url en type Url -> cast explicite pour JSON
     payload = body.model_dump()
     payload["video_url"] = str(body.video_url)
 
@@ -124,4 +131,9 @@ async def detect_video(
     if x_prvx_address:
         result["prvx_address"] = x_prvx_address
     return result
+
+
+# ✅ EXPORT ASGI : obligatoire pour Uvicorn
+app = FastAPI(title="PrivacyX Gateway")
+app.include_router(router, prefix="/v1")
 
