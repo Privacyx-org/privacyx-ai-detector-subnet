@@ -8,3 +8,5 @@ Pillow
 httpx
 
 web3
+
+onnxruntime
