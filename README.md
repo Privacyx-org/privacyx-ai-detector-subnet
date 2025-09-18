@@ -8,83 +8,83 @@ A microservice stack (gateway ➜ scheduler ➜ miners) providing ONNX-based ima
 Docker & Docker Compose v2
 
 (Optional) jq
- for pretty JSON output
-
-# Repository layout
+ for pretty JSON output                                                                  
+  
+# Repository layout                                                 
 .
-├─ docker-compose.prod.yml
+├─ docker-compose.prod.yml                                                              
 ├─ Dockerfile.gateway
-├─ Dockerfile.scheduler
-├─ Dockerfile.miner
+├─ Dockerfile.scheduler               
+├─ Dockerfile.miner                    
 ├─ run-miner.sh
-└─ services/
-   └─ miner/
+└─ services/                                    
+   └─ miner/                                                                                                                  
       ├─ app/
       │  └─ api.py               # FastAPI endpoints: /health, /info, /detect/image, /infer/image
-      ├─ impl_onnx.py            # ONNX inference (CPU)
+      ├─ impl_onnx.py            # ONNX inference (CPU)                      
       └─ models/
-         ├─ detector.onnx        # ONNX model (not versioned)
+         ├─ detector.onnx        # ONNX model (not versioned)                                        
          └─ imagenet_classes.txt
 
-# Quick start
-# 1) Environment
+# Quick start                                             
+# 1) Environment                                                                                    
 
 Copy the example env:
 
-cp .env.example .env
+cp .env.example .env                        
 
 
 Key variables (defaults if unset):
 
 API_KEYS=dev
 
-MODEL_IMPL=onnx
-
-MODEL_PATH=/app/services/miner/models/detector.onnx
-
+MODEL_IMPL=onnx                                
+  
+MODEL_PATH=/app/services/miner/models/detector.onnx                                      
+  
 IMAGENET_LABELS_PATH=/app/services/miner/models/imagenet_classes.txt
 
-DISABLE_QOS=1
-
-# 2) Download model & labels
-mkdir -p services/miner/models
-
-curl -L -o services/miner/models/detector.onnx \
+DISABLE_QOS=1                                  
+  
+# 2) Download model & labels          
+mkdir -p services/miner/models         
+  
+curl -L -o services/miner/models/detector.onnx \              
   "https://media.githubusercontent.com/media/onnx/models/main/validated/vision/classification/resnet/model/resnet50-v2-7.onnx"
 
 curl -L -o services/miner/models/imagenet_classes.txt \
   "https://raw.githubusercontent.com/pytorch/hub/master/imagenet_classes.txt"
 
-wc -l services/miner/models/imagenet_classes.txt   # should print 1000
+wc -l services/miner/models/imagenet_classes.txt   # should print 1000                               
 
 # 3) Build & run
 docker compose -f docker-compose.prod.yml build --no-cache
-docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d                                                     
 docker compose -f docker-compose.prod.yml ps
 
 
 Wait until the gateway container is healthy.
 
-# Quick tests
-# Gateway health
+# Quick tests                                 
+Gateway health
 curl -s http://127.0.0.1:7070/v1/health | python -m json.tool
 
-# Image detection from URL
+Image detection from URL               
 curl -s http://127.0.0.1:7070/v1/detect/image \
-  -H 'x-api-key: dev' -H 'content-type: application/json' \
+  -H 'x-api-key: dev' -H 'content-type: application/json' \                             
   -d '{"source_url":"https://picsum.photos/seed/px/600/400","return_explanation":true}' \
   | python -m json.tool
 
-# Image detection with PRVX address
+Image detection with PRVX address
 curl -s http://127.0.0.1:7070/v1/detect/image \
   -H 'x-api-key: dev' \
   -H 'x-prvx-address: 0xYourAddress' \
   -H 'content-type: application/json' \
   -d '{"source_url":"https://picsum.photos/seed/px/600/400"}' \
-  | python -m json.tool
+  | python -m json.tool                                       
 
 # Miner diagnostics
-
+  
 Miners are internal only. Inspect them via docker exec:
 
 docker compose -f docker-compose.prod.yml exec miner1 sh -lc 'curl -fsS http://localhost:6061/health'
@@ -120,13 +120,13 @@ environment:
   - ORT_NUM_THREADS=2
 
 # API
-# Gateway
+Gateway
 
-# GET /v1/health — service status
+GET /v1/health — service status
 
-# POST /v1/detect/image — image classification
+POST /v1/detect/image — image classification
 
-# Request (option A):
+Request (option A):
 
 {
   "image_b64": "data:image/jpeg;base64,...",
@@ -134,7 +134,7 @@ environment:
 }
 
 
-# Request (option B):
+Request (option B):
 
 {
   "source_url": "https://example.com/image.jpg",
@@ -143,9 +143,9 @@ environment:
 
 # Miner (internal)
 
-# GET /health — status
-# GET /info — runtime info (env, ONNX providers)
-# POST /detect/image and POST /infer/image — image classification
+GET /health — status
+GET /info — runtime info (env, ONNX providers)
+POST /detect/image and POST /infer/image — image classification
 
 # Versioning
 git tag -a vX.Y.Z -m "description"
