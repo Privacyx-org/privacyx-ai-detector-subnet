@@ -1,9 +1,9 @@
-name: Publish images to GHCR
+name: Publish images to GHCR (multi-arch)
 
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - 'v*'
 
 permissions:
   contents: read
@@ -12,6 +12,7 @@ permissions:
 env:
   REGISTRY: ghcr.io
   ORG: privacyx-org
+  PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
   build-and-push:
@@ -19,6 +20,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up QEMU (for cross-arch)
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
@@ -35,37 +39,40 @@ jobs:
         run: |
           REF="${GITHUB_REF##*/}"
           echo "version=${REF}" >> $GITHUB_OUTPUT
-          echo "version_no_v=${REF#v}" >> $GITHUB_OUTPUT
 
-      # Build & push gateway
-      - name: Build & push gateway
+      # GATEWAY
+      - name: Build & push gateway (multi-arch)
         uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.gateway
+          platforms: ${{ env.PLATFORMS }}
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.ORG }}/px-gateway:${{ steps.vars.outputs.version }}
             ${{ env.REGISTRY }}/${{ env.ORG }}/px-gateway:latest
 
-      # Build & push scheduler
-      - name: Build & push scheduler
+      # SCHEDULER
+      - name: Build & push scheduler (multi-arch)
         uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.scheduler
+          platforms: ${{ env.PLATFORMS }}
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.ORG }}/px-scheduler:${{ steps.vars.outputs.version }}
             ${{ env.REGISTRY }}/${{ env.ORG }}/px-scheduler:latest
 
-      # Build & push miner
-      - name: Build & push miner
+      # MINER
+      - name: Build & push miner (multi-arch)
         uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.miner
+          platforms: ${{ env.PLATFORMS }}
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.ORG }}/px-miner:${{ steps.vars.outputs.version }}
             ${{ env.REGISTRY }}/${{ env.ORG }}/px-miner:latest
+
