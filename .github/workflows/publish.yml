@@ -1,9 +1,9 @@
-name: Publish images to GHCR (multi-arch)
+name: Publish Docker images
 
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*'   # run on any tag starting with v
 
 permissions:
   contents: read
@@ -21,7 +21,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up QEMU (for cross-arch)
+      - name: Set up QEMU (for arm64 cross-build)
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Buildx
@@ -34,14 +34,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract version from tag
+      - name: Extract version from ref
         id: vars
         run: |
           REF="${GITHUB_REF##*/}"
           echo "version=${REF}" >> $GITHUB_OUTPUT
 
-      # GATEWAY
-      - name: Build & push gateway (multi-arch)
+      # Build & push gateway
+      - name: Build & push gateway
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -52,8 +52,8 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.ORG }}/px-gateway:${{ steps.vars.outputs.version }}
             ${{ env.REGISTRY }}/${{ env.ORG }}/px-gateway:latest
 
-      # SCHEDULER
-      - name: Build & push scheduler (multi-arch)
+      # Build & push scheduler
+      - name: Build & push scheduler
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -64,8 +64,8 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.ORG }}/px-scheduler:${{ steps.vars.outputs.version }}
             ${{ env.REGISTRY }}/${{ env.ORG }}/px-scheduler:latest
 
-      # MINER
-      - name: Build & push miner (multi-arch)
+      # Build & push miner
+      - name: Build & push miner
         uses: docker/build-push-action@v6
         with:
           context: .
