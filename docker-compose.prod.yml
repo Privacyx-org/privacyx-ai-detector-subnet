@@ -1,19 +1,13 @@
 services:
   gateway:
-    build:
-      context: .
-      dockerfile: Dockerfile.gateway
-    image: privacyx/gateway:prod
+    image: ghcr.io/privacyx-org/px-gateway:v0.1.9
     restart: unless-stopped
-    env_file:
-      - .env
+    env_file: [.env]
     environment:
-      # Fallbacks si .env manquant
       - API_KEYS=${API_KEYS:-dev}
       - SCHEDULER_URL=http://scheduler:7080
       - DISABLE_QOS=${DISABLE_QOS:-1}
-    ports:
-      - "7070:7070"
+    ports: ["7070:7070"]
     depends_on:
       scheduler:
         condition: service_healthy
@@ -24,18 +18,13 @@ services:
       retries: 5
 
   scheduler:
-    build:
-      context: .
-      dockerfile: Dockerfile.scheduler
-    image: privacyx/scheduler:prod
+    image: ghcr.io/privacyx-org/px-scheduler:v0.1.9
     restart: unless-stopped
-    env_file:
-      - .env
+    env_file: [.env]
     environment:
       - SCHEDULER_PORT=7080
       - MINER_URLS=http://miner1:6061,http://miner2:6062
-    expose:
-      - "7080"
+    expose: ["7080"]
     healthcheck:
       test: ["CMD","curl","-fsS","http://localhost:7080/health"]
       interval: 10s
@@ -43,19 +32,17 @@ services:
       retries: 5
 
   miner1:
-    build:
-      context: .
-      dockerfile: Dockerfile.miner
-    image: privacyx/miner:prod
+    image: ghcr.io/privacyx-org/px-miner:v0.1.9
     restart: unless-stopped
     environment:
       - PORT=6061
       - MODEL_IMPL=onnx
       - MODEL_PATH=/app/services/miner/models/detector.onnx
+      - OMP_NUM_THREADS=1
+      - ORT_NUM_THREADS=1
     volumes:
       - ./services/miner/models:/app/services/miner/models:ro
-    expose:
-      - "6061"
+    expose: ["6061"]
     healthcheck:
       test: ["CMD","curl","-fsS","http://localhost:6061/health"]
       interval: 10s
@@ -63,19 +50,17 @@ services:
       retries: 5
 
   miner2:
-    build:
-      context: .
-      dockerfile: Dockerfile.miner
-    image: privacyx/miner:prod
+    image: ghcr.io/privacyx-org/px-miner:v0.1.9
     restart: unless-stopped
     environment:
       - PORT=6062
       - MODEL_IMPL=onnx
       - MODEL_PATH=/app/services/miner/models/detector.onnx
+      - OMP_NUM_THREADS=1
+      - ORT_NUM_THREADS=1
     volumes:
       - ./services/miner/models:/app/services/miner/models:ro
-    expose:
-      - "6062"
+    expose: ["6062"]
     healthcheck:
       test: ["CMD","curl","-fsS","http://localhost:6062/health"]
       interval: 10s
